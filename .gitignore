@@ -1,0 +1,36 @@
+# byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# c extensions
+*.so
+
+# ipython notebook
+Interactive.ipynb
+.ipynb_checkpoints
+
+# temporary files
+*.pyc
+*.swp
+
+# pycharm
+projectFilesBackup/
+.idea/
+
+# tests
+.pytest_cache/
+
+# packaging
+build/
+dist/
+pip-wheel-metadata/
+.eggs/
+*.egg-info/
+
+# mac
+.DS_Store/
+
+# virtualenv
+venv/
+
