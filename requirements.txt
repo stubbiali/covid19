@@ -2,4 +2,5 @@ ipdb
 ipython
 matplotlib
 numpy
+pandas
 wheel
