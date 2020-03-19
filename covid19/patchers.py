@@ -155,8 +155,30 @@ class PatcherWorld:
                 for elem in province_and_country_dc:
                     csv_writer.writerow([elem[0], elem[1], date, 0, 0, 0, 0.0, 0.0])
 
+    @staticmethod
+    def replace_mainland_china():
+        columns = PatcherWorld.columns
+
+        dir = os.path.join(
+            config.repo_world_dir, "csse_covid_19_data/csse_covid_19_daily_reports"
+        )
+        filenames = pathlib.Path(dir).glob("*.csv")
+        filenames = sorted(filenames)
+
+        for filename in filenames:
+            with open(str(filename), "r") as file:
+                csv_reader_data = list(csv.reader(file, delimiter=","))
+                for row in csv_reader_data:
+                    if row[columns["Country/Region"]] == "Mainland China":
+                        row[columns["Country/Region"]] = "China"
+
+            with open(str(filename), "w") as file:
+                csv_writer = csv.writer(file, delimiter=",")
+                csv_writer.writerows(csv_reader_data)
+
 
 if __name__ == "__main__":
     pw = PatcherWorld()
-    pw.check_date()
     pw.fill_data()
+    pw.check_date()
+    pw.replace_mainland_china()
