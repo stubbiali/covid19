@@ -1,19 +1,10 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 import csv
-import numpy as np
 import os
 import pathlib
 
 from covid19 import config
 from covid19.update_data import update_italy, update_world
-
-
-def convert_time_string(time_string):
-    year = int(time_string[:4])
-    month = int(time_string[5:7])
-    day = int(time_string[8:10])
-    return datetime(year=year, month=month, day=day)
 
 
 class PatcherItaly:
@@ -63,7 +54,11 @@ class PatcherItaly:
     }
 
     def __init__(self):
-        self.data_updated = False
+        update_italy()
+
+    @staticmethod
+    def run():
+        pass
 
 
 class PatcherWorld:
@@ -80,6 +75,12 @@ class PatcherWorld:
 
     def __init__(self):
         update_world()
+
+    @staticmethod
+    def run():
+        PatcherWorld.fill_data()
+        PatcherWorld.check_date()
+        PatcherWorld.replace_mainland_china()
 
     @staticmethod
     def check_date():
@@ -178,6 +179,8 @@ class PatcherWorld:
 
 
 if __name__ == "__main__":
+    pi = PatcherItaly()
+
     pw = PatcherWorld()
     pw.fill_data()
     pw.check_date()

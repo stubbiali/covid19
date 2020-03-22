@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 import csv
 import numpy as np
 import os
@@ -7,13 +6,7 @@ import pathlib
 
 from covid19 import config
 from covid19.update_data import update_italy, update_world
-
-
-def convert_time_string(time_string):
-    year = int(time_string[:4])
-    month = int(time_string[5:7])
-    day = int(time_string[8:10])
-    return datetime(year=year, month=month, day=day)
+from covid19.utils import convert_string_to_datetime
 
 
 class LoaderItaly:
@@ -103,7 +96,7 @@ class LoaderItaly:
 
                         if field in columns:
                             if field == "data":
-                                data.append(convert_time_string(row[columns[field]]))
+                                data.append(convert_string_to_datetime(row[columns[field]]))
                             elif field == "stato":
                                 data.append(row[columns[field]])
                             else:
@@ -162,7 +155,7 @@ class LoaderItaly:
 
                         if field in columns:
                             if field == "data":
-                                data.append(convert_time_string(row[columns[field]]))
+                                data.append(convert_string_to_datetime(row[columns[field]]))
                             elif field == "stato":
                                 data.append(row[columns[field]])
                             elif field in ("lat", "long"):
@@ -230,7 +223,7 @@ class LoaderItaly:
 
                         if field in columns:
                             if field == "data":
-                                data.append(convert_time_string(row[columns[field]]))
+                                data.append(convert_string_to_datetime(row[columns[field]]))
                             elif field in (
                                 "stato",
                                 "denominazione_regione",
@@ -319,7 +312,7 @@ class LoaderWorld:
 
                         if field in columns:
                             if field == "Last Update":
-                                data.append(convert_time_string(row[columns[field]]))
+                                data.append(convert_string_to_datetime(row[columns[field]]))
                             elif field in ("Province/State", "Country/Region"):
                                 data.append(row[columns[field]])
                             elif field in ("Latitude", "Longitude"):
@@ -375,7 +368,7 @@ class LoaderWorld:
 
                         if field in columns:
                             if field == "Last Update":
-                                data.append(convert_time_string(row[columns[field]]))
+                                data.append(convert_string_to_datetime(row[columns[field]]))
                             elif field in ("Province/State", "Country/Region"):
                                 data.append(row[columns[field]])
                             elif field in ("Latitude", "Longitude"):
