@@ -78,6 +78,7 @@ class PatcherWorld:
 
     @staticmethod
     def run():
+        PatcherWorld.fill_header()
         PatcherWorld.fill_data()
         PatcherWorld.check_date()
         PatcherWorld.replace_mainland_china()
@@ -157,6 +158,27 @@ class PatcherWorld:
                     csv_writer.writerow([elem[0], elem[1], date, 0, 0, 0, 0.0, 0.0])
 
     @staticmethod
+    def fill_header():
+        dir = os.path.join(
+            config.repo_world_dir, "csse_covid_19_data/csse_covid_19_daily_reports"
+        )
+        filenames = pathlib.Path(dir).glob("*.csv")
+        filenames = sorted(filenames)
+
+        for filename in filenames:
+            with open(str(filename), "r") as file:
+                csv_reader = csv.reader(file, delimiter=",")
+                csv_reader_data = list(csv_reader)
+
+            if len(csv_reader_data[0]) == 6:
+                csv_reader_data[0].append("Latitude")
+                csv_reader_data[0].append("Longitude")
+
+            with open(str(filename), "w") as file:
+                csv_writer = csv.writer(file, delimiter=",")
+                csv_writer.writerows(csv_reader_data)
+
+    @staticmethod
     def replace_mainland_china():
         columns = PatcherWorld.columns
 
@@ -185,3 +207,4 @@ if __name__ == "__main__":
     pw.fill_data()
     pw.check_date()
     pw.replace_mainland_china()
+    pw.fill_header()
