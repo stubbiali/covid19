@@ -5,66 +5,68 @@ import subprocess
 from covid19 import config
 
 
-root_dir = "/Users/subbiali/Desktop/covid19"
-data_dir = os.path.join(root_dir, "data")
+def update_repo(repo_dir, repo_branch, repo_logfile):
+    if not os.path.isdir(repo_dir):
+        print("Clone the repo {} ...".format(repo_dir))
+
+        with open(repo_logfile, "w") as logfile:
+            clone = subprocess.run(
+                ["git", "submodule", "update", repo_dir], stdout=logfile, stderr=logfile
+            )
+            if clone.returncode:
+                print("Clone failed. Please see {}.".format(repo_logfile))
+                return
+            else:
+                pass
+
+    os.chdir(repo_dir)
+
+    print("Refresh the repo {} ...".format(repo_dir))
+
+    with open(repo_logfile, "w") as logfile:
+        checkout = subprocess.run(
+            ["git", "checkout", repo_branch], stdout=logfile, stderr=logfile
+        )
+        if checkout.returncode:
+            print(
+                "Could not checkout the {} branch. Please see {}.".format(
+                    repo_branch, repo_logfile
+                )
+            )
+            return
+        pull = subprocess.run(["git", "pull"], stdout=logfile, stderr=logfile)
+        if pull.returncode:
+            print(
+                "Could not pull the {} branch. Please see {}.".format(
+                    repo_branch, repo_logfile
+                )
+            )
+            return
+        else:
+            pass
 
 
 def update_italy():
-    if not os.path.isdir(config.repo_italy_dir):
-        print("Cloning the repo containing the Italian data ...")
-
-        with open(config.repo_italy_logfile, "w") as logfile:
-            clone = subprocess.run(
-                ["git", "clone", config.repo_italy_remote, config.repo_italy_dir],
-                stdout=logfile, stderr=logfile
-            )
-            if clone.returncode:
-                print("Clone failed. Please see {}.".format(config.repo_italy_logfile))
-                return
-            else:
-                print("Clone completed successfully.")
-    else:
-        os.chdir(config.repo_italy_dir)
-
-        print("Updating the Italian data ...")
-
-        with open(config.repo_italy_logfile, "w") as logfile:
-            pull = subprocess.run(["git", "pull"], stdout=logfile, stderr=logfile)
-            if pull.returncode:
-                print("Update failed. Please see {}.".format(config.repo_italy_logfile))
-                return
-            else:
-                print("Update completed successfully.")
+    update_repo(
+        config.repo_italy_dir, config.repo_italy_branch, config.repo_italy_logfile
+    )
 
 
 def update_world():
-    if not os.path.isdir(config.repo_italy_dir):
-        print("Cloning the repo containing the global data ...")
+    update_repo(
+        config.repo_world_dir, config.repo_world_branch, config.repo_world_logfile
+    )
 
-        with open(config.repo_world_logfile, "w") as logfile:
-            clone = subprocess.run(
-                ["git", "clone", config.repo_italy_remote, config.repo_world_dir],
-                stdout=logfile, stderr=logfile
-            )
-            if clone.returncode:
-                print("Clone failed. Please see {}.".format(config.repo_world_logfile))
-                return
-            else:
-                print("Clone completed successfully.")
-    else:
-        os.chdir(config.repo_world_dir)
 
-        print("Updating the global data ...")
-
-        with open(config.repo_world_logfile, "w") as logfile:
-            pull = subprocess.run(["git", "pull"], stdout=logfile, stderr=logfile)
-            if pull.returncode:
-                print("Update failed. Please see {}.".format(config.repo_world_logfile))
-                return
-            else:
-                print("Update completed successfully.")
+def update_switzerland():
+    update_repo(
+        config.repo_switzerland_dir,
+        config.repo_switzerland_branch,
+        config.repo_switzerland_logfile,
+    )
 
 
 if __name__ == "__main__":
     update_italy()
     update_world()
+    update_switzerland()
