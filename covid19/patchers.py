@@ -78,10 +78,10 @@ class PatcherWorld:
 
     @staticmethod
     def run():
+        PatcherWorld.replace_mainland_china()
         PatcherWorld.fill_header()
         PatcherWorld.fill_data()
         PatcherWorld.check_date()
-        PatcherWorld.replace_mainland_china()
 
     @staticmethod
     def check_date():
