@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import csv
 import numpy as np
 import os
 import pandas as pd
@@ -57,13 +56,70 @@ class LoaderItaly:
         "totale_casi": 9,
     }
 
+    instance = None
+
+    def __new__(cls):
+        if LoaderItaly.instance is None:
+            LoaderItaly.instance = super().__new__(cls)
+        return LoaderItaly.instance
+
     def __init__(self, update_data=True, apply_patches=False):
-        # lazy patching and loading
-        self.data_updated = not update_data
-        self.data_patched = not apply_patches
-        self.data_country = None
-        self.data_regions = None
-        self.data_provinces = None
+        if not hasattr(self, "data_updated"):
+            # lazy patching and loading
+            self.data_updated = not update_data
+            self.data_patched = not apply_patches
+            self.data_country = None
+            self.data_regions = None
+            self.data_provinces = None
+
+            # auxiliary variable used to compute increments
+            self.old = None
+
+    def fetch_time_and_datum(self, df_idx, df_row, field, columns):
+        time = df_row["data"].item()[:10]
+
+        error = RuntimeError("Sorry, don't know how to retrieve '{}'.".format(field))
+
+        if field in columns:
+            if field == "data":
+                datum = convert_string_to_datetime(df_row["data"].item())
+            else:
+                datum = df_row[field].item()
+        elif "incremento_" in field:
+            if "incremento_relativo_percentuale_" in field:
+                col = field[32:]
+            elif "incremento_relativo_" in field:
+                col = field[20:]
+            else:
+                col = field[11:]
+
+            if col not in columns or col in ("data", "stato"):
+                raise error
+
+            if df_idx == 0:
+                datum = 0.0
+                self.old = float(df_row[col].item())
+            else:
+                assert self.old is not None
+
+                new = float(df_row[col].item())
+
+                if "incremento_relativo_percentuale_" in field:
+                    datum = (
+                        100 * (new - self.old) / self.old
+                        if not np.isclose(self.old, 0.0)
+                        else 0.0
+                    )
+                elif "incremento_relativo_" in field:
+                    datum = (new - self.old) / self.old if not np.isclose(self.old, 0.0) else 0.0
+                else:
+                    datum = new - self.old
+
+                self.old = new
+        else:
+            raise error
+
+        return time, datum
 
     def load(self, field, region=None, province=None):
         if not self.data_updated:
@@ -102,37 +158,13 @@ class LoaderItaly:
 
         print("Load data concerning Italy ...")
 
-        columns = LoaderItaly.columns_country
-
         time = []
         data = []
 
-        for df in self.data_country:
-            time.append(df["data"][0][:10])
-
-            if field in columns:
-                if field == "data":
-                    data.append(convert_string_to_datetime(df["data"][0]))
-                else:
-                    data.append(df[field].item())
-            elif field == "incremento_relativo":
-                x = float(df["totale_attualmente_positivi"][0])
-                y = float(df["nuovi_attualmente_positivi"][0])
-                if not np.isclose(x, y):
-                    data.append(y / (x - y))
-                else:
-                    data.append(0.0)
-            elif field == "incremento_relativo_percentuale":
-                x = float(df["totale_attualmente_positivi"][0])
-                y = float(df["nuovi_attualmente_positivi"][0])
-                if not np.isclose(x, y):
-                    data.append(100 * y / (x - y))
-                else:
-                    data.append(0.0)
-            else:
-                raise RuntimeError(
-                    "Sorry, don't know how to retrieve '{}'.".format(field)
-                )
+        for idx, df in enumerate(self.data_country):
+            t, d = self.fetch_time_and_datum(idx, df, field, LoaderItaly.columns_country)
+            time.append(t)
+            data.append(d)
 
         return time, data
 
@@ -154,43 +186,17 @@ class LoaderItaly:
 
         print("Load data concerning {} ... ".format(region))
 
-        columns = LoaderItaly.columns_region
-
         time = []
         data = []
 
-        for df in self.data_regions:
+        for idx, df in enumerate(self.data_regions):
             row = df.loc[df["denominazione_regione"] == region]
             if len(row) == 0:
-                raise RuntimeError(
-                    "Sorry, region '{}' does not exist.".format(region)
-                )
+                raise RuntimeError("Sorry, region '{}' does not exist.".format(region))
 
-            time.append(row["data"].item()[:10])
-
-            if field in columns:
-                if field == "data":
-                    data.append(convert_string_to_datetime(row["data"].item()))
-                else:
-                    data.append(row[field].item())
-            elif field == "incremento_relativo":
-                x = float(row["totale_attualmente_positivi"].item())
-                y = float(row["nuovi_attualmente_positivi"].item())
-                if not np.isclose(x, y):
-                    data.append(y / (x - y))
-                else:
-                    data.append(0.0)
-            elif field == "incremento_relativo_percentuale":
-                x = float(row["totale_attualmente_positivi"].item())
-                y = float(row["nuovi_attualmente_positivi"].item())
-                if not np.isclose(x, y):
-                    data.append(100 * y / (x - y))
-                else:
-                    data.append(0.0)
-            else:
-                raise RuntimeError(
-                    "Sorry, don't know how to retrieve '{}'.".format(field)
-                )
+            t, d = self.fetch_time_and_datum(idx, row, field, LoaderItaly.columns_region)
+            time.append(t)
+            data.append(d)
 
         return time, data
 
@@ -210,31 +216,23 @@ class LoaderItaly:
         if self.data_provinces is None:
             self.mount_provinces()
 
-        print("Loading data concerning {} ...".format(province))
+        print("Load data concerning {} ...".format(province))
 
         columns = LoaderItaly.columns_province
 
         time = []
         data = []
 
-        for df in self.data_provinces:
+        for idx, df in enumerate(self.data_provinces):
             row = df.loc[df["denominazione_provincia"] == province]
             if len(row) == 0:
                 raise RuntimeError(
                     "Sorry, province '{}' does not exist.".format(province)
                 )
 
-            time.append(row["data"].item()[:10])
-
-            if field in columns:
-                if field == "data":
-                    data.append(convert_string_to_datetime(row["data"].item()))
-                else:
-                    data.append(row[field].item())
-            else:
-                raise RuntimeError(
-                    "Sorry, don't know how to retrieve '{}'.".format(field)
-                )
+            t, d = self.fetch_time_and_datum(idx, row, field, LoaderItaly.columns_province)
+            time.append(t)
+            data.append(d)
 
         return time, data
 
@@ -251,11 +249,22 @@ class LoaderWorld:
         "Longitude": 7,
     }
 
+    instance = None
+
+    def __new__(cls):
+        if LoaderWorld.instance is None:
+            LoaderWorld.instance = super().__new__(cls)
+        return LoaderWorld.instance
+
     def __init__(self, update_data=True, apply_patches=False):
-        # lazy patching and loading
-        self.data_updated = not update_data
-        self.data_patched = not apply_patches
-        self.data = None
+        if not hasattr(self, "data_updated"):
+            # lazy patching and loading
+            self.data_updated = not update_data
+            self.data_patched = not apply_patches
+            self.data = None
+
+            # auxiliary variable used to compute increments
+            self.old = None
 
     def load(self, field, province=None, country=None):
         if not self.data_updated:
@@ -296,10 +305,14 @@ class LoaderWorld:
 
         columns = LoaderWorld.columns
 
+        error = RuntimeError(
+            "Sorry, don't know how to retrieve '{}'.".format(field)
+        )
+
         time = []
         data = []
 
-        for df in self.data:
+        for idx, df in enumerate(self.data):
             row = df.loc[df["Province/State"] == province]
             if len(row) == 0:
                 raise RuntimeError(
@@ -313,10 +326,35 @@ class LoaderWorld:
                     data.append(convert_string_to_datetime(row["Last Update"].item()))
                 else:
                     data.append(row[field].item())
+            elif "increase_" in field:
+                if "relative_percentage_increase_" in field:
+                    col = field[29:]
+                elif "relative_increase_" in field:
+                    col = field[18:]
+                else:
+                    col = field[9:]
+
+                if col not in ("Confirmed", "Deaths", "Recovered"):
+                    raise error
+
+                if idx == 0:
+                    data.append(0.0)
+                    self.old = float(row[field].item())
+                else:
+                    assert self.old is not None
+
+                    new = float(row[field].item())
+
+                    if "relative_percentage_increase_" in field:
+                        data.append(100 * (new - self.old) / self.old if not np.isclose(self.old, 0.0) else 0.0)
+                    elif "relative_increase_" in field:
+                        data.append((new - self.old) / self.old if not np.isclose(self.old, 0.0) else 0.0)
+                    else:
+                        data.append(new - self.old)
+
+                    self.old = new
             else:
-                raise RuntimeError(
-                    "Sorry, don't know how to retrieve '{}'.".format(field)
-                )
+                raise error
 
         return time, data
 
@@ -342,7 +380,9 @@ class LoaderWorld:
 
             if field in columns:
                 if field == "Last Update":
-                    data.append(convert_string_to_datetime(rows["Last Update"][rows.index[0]]))
+                    data.append(
+                        convert_string_to_datetime(rows["Last Update"][rows.index[0]])
+                    )
                 elif field in ("Confirmed", "Deaths", "Recovered"):
                     data.append(rows.sum(axis=0)[field])
                 else:
@@ -357,13 +397,13 @@ class LoaderWorld:
 
 if __name__ == "__main__":
     ld = LoaderItaly(update_data=False, apply_patches=False)
-    ld.load_country("incremento_relativo_percentuale")
-    ld.load_region("incremento_relativo_percentuale", "Lombardia")
+    ld.load_country("incremento_relativo_percentuale_totale_casi")
+    ld.load_region("incremento_relativo_percentuale_totale_attualmente_positivi", "Lombardia")
     ld.load_province("totale_casi", "Bergamo")
     ld.load_province("totale_casi", "Brescia")
 
     ld = LoaderWorld(update_data=False, apply_patches=False)
-    ld.load("Confirmed", country="Italy")
+    ld.load("Confirmed", province="Hubei")
     # ld.load("Latitude", country="Italy")
 
     # time, data = ld.load("incremento_relativo_percentuale")
