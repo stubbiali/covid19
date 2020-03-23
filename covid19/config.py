@@ -11,15 +11,15 @@ repo_italy_remote = "https://github.com/pcm-dpc/COVID-19.git"
 repo_italy_branch = "master"
 repo_italy_logfile = os.path.join(data_dir, "italy.log")
 
-repo_world_dir = os.path.join(data_dir, "world")
-repo_world_remote = "https://github.com/CSSEGISandData/COVID-19.git"
-repo_world_branch = "master"
-repo_world_logfile = os.path.join(data_dir, "world.log")
-
 repo_switzerland_dir = os.path.join(data_dir, "switzerland")
 repo_switzerland_remote = "https://github.com/openZH/covid_19.git"
 repo_switzerland_branch = "master"
 repo_switzerland_logfile = os.path.join(data_dir, "switzerland.log")
+
+repo_world_dir = os.path.join(data_dir, "world")
+repo_world_remote = "https://github.com/CSSEGISandData/COVID-19.git"
+repo_world_branch = "master"
+repo_world_logfile = os.path.join(data_dir, "world.log")
 
 shorthands = {
     "Italy": "ITA",
