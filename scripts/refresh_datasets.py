@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-from covid19.update_data import update_all
+from covid19.updater import Updater, ledger
 
 
 if __name__ == "__main__":
-    update_all()
+    for name in ledger:
+        updater = Updater.factory(name)
+        updater.run()

@@ -3,7 +3,7 @@ import functools
 
 from covid19 import config
 from covid19.drawers import TimeSeriesDrawer
-from covid19.loaders import LoaderWorld
+from covid19.loader import Loader
 from covid19.monitor import Monitor
 
 
@@ -31,10 +31,10 @@ if __name__ == "__main__":
     #     label = provinces[i] if provinces[i] else countries[i]
     #     labels.append(label + " " + fields[i])
 
-    loader = LoaderWorld()
-    time, _ = loader.load("Confirmed", country="Italy")
+    loader = Loader.factory("world")
+    time, _ = loader.run("Confirmed", country="Italy")
     loader_fcts = list(
-        functools.partial(loader.load, field, province, country)
+        functools.partial(loader.run, field, province=province, country=country)
         for field, province, country in zip(fields, provinces, countries)
     )
 
@@ -74,4 +74,4 @@ if __name__ == "__main__":
         figure_properties=figure_properties,
         axes_properties=axes_properties,
     )
-    monitor.plot(show=True)
+    monitor.run(show=True)
