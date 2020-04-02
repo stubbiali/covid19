@@ -2,8 +2,6 @@
 import os
 import subprocess
 
-from covid19 import config
-
 
 def update_repo(repo_dir, repo_branch, repo_logfile):
     if not os.path.isdir(repo_dir):
@@ -51,33 +49,3 @@ def update_repo(repo_dir, repo_branch, repo_logfile):
             os.chdir(pwd)
 
 
-def update_italy():
-    update_repo(
-        config.repo_italy_dir, config.repo_italy_branch, config.repo_italy_logfile
-    )
-
-
-def update_switzerland():
-    update_repo(
-        config.repo_switzerland_dir,
-        config.repo_switzerland_branch,
-        config.repo_switzerland_logfile,
-    )
-
-
-def update_world():
-    update_repo(
-        config.repo_world_dir, config.repo_world_branch, config.repo_world_logfile
-    )
-
-
-def update_all():
-    update_italy()
-    update_switzerland()
-    update_world()
-
-
-if __name__ == "__main__":
-    update_italy()
-    update_switzerland()
-    update_world()
