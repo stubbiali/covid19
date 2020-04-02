@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import os
 
 from covid19 import plot_utils
-from covid19.drawers import TimeSeriesDrawer
-from covid19.loaders import LoaderItaly
 
 
 class Monitor:
@@ -29,7 +27,7 @@ class Monitor:
         self.set_figure()
         return self._figure
 
-    def plot(self, fig=None, ax=None, save_dest=None, show=False):
+    def run(self, fig=None, ax=None, save_dest=None, show=False):
         # set the private _figure attribute
         self.set_figure(fig)
 
@@ -97,37 +95,3 @@ class Monitor:
             self._figure = (
                 plt.figure(figsize=figsize) if self._figure is None else self._figure
             )
-
-
-if __name__ == "__main__":
-    loader = LoaderItaly()
-    time, _ = loader.load("data")
-    loader_fct = lambda: loader.load("incremento_relativo_percentuale")
-
-    drawer_properties = {
-        "linestyle": "-",
-        "linewidth": 2.0,
-        "linecolor": "blue",
-        "marker": "o",
-        "markersize": 8,
-        "markercolor": "blue",
-    }
-    drawer = TimeSeriesDrawer(drawer_properties)
-
-    figure_properties = {"figsize": (7, 6), "tight_layout": True, "fontsize": 16}
-    axes_properties = {
-        "x_label": "Day",
-        "x_ticks": range(len(time)),
-        "x_ticklabels": time,
-        "x_ticklabels_rotation": 90,
-        "y_scale": None,
-    }
-
-    monitor = Monitor(
-        [loader_fct],
-        [drawer],
-        figure_properties=figure_properties,
-        axes_properties=axes_properties,
-    )
-
-    monitor.plot(show=True)
