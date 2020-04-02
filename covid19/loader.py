@@ -1,13 +1,44 @@
 # -*- coding: utf-8 -*-
+import abc
 import numpy as np
 import os
 import pandas as pd
 import pathlib
 
 from covid19 import config
-from covid19.patchers import PatcherItaly, PatcherWorld
-from covid19.updater import update_italy, update_world
+from covid19.patcher import Patcher
+from covid19.updater import Updater
 from covid19.utils import convert_string_to_datetime
+
+
+ledger = {}
+
+
+def registry(name):
+    def wrapper(cls):
+        ledger[name] = cls
+        return cls
+    return wrapper
+
+
+class Loader(abc.ABC):
+    def __init__(self, name, update_data, apply_patches):
+        if update_data:
+            updater = Updater.factory(name)
+            updater.run()
+        if apply_patches:
+            patcher = Patcher.factory(name, update_data=False)
+            patcher.run()
+
+    @abc.abstractmethod
+    def run(self, field, province=None, region=None, country=None):
+        pass
+
+    @staticmethod
+    def factory(name, update_data=True, apply_patches=False, *args, **kwargs):
+        if name not in ledger:
+            raise RuntimeError(f"Loader {name} does not exist.")
+        return ledger[name](name, update_data, apply_patches, *args, **kwargs)
 
 
 class LoaderItaly:
